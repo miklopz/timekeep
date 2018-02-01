@@ -82,6 +82,8 @@
     <Content Include="packages.config" />
     <None Include="bundleconfig.json" />
     <Content Include="compilerconfig.json" />
+    <None Include="Properties\PublishProfiles\DebugProfile.pubxml" />
+    <None Include="Properties\PublishProfiles\ReleaseProfile.pubxml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

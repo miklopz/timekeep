@@ -10,6 +10,7 @@
             Response.Write("<script type=\"text/javascript\">var initPara = {endpoint:'" + TimeKeep.Web.UI.Configuration.API.Endpoint + "'," +
                 "user:'" + (HttpContext.Current.User == null || HttpContext.Current.User.Identity == null || !HttpContext.Current.User.Identity.IsAuthenticated ? "anonymous" : HttpContext.Current.User.Identity.Name.ToLowerInvariant().Replace(" ", "")) +
                 "',accessToken:" + (HttpContext.Current.Request.Cookies["OAuthIDToken"] != null ? string.Concat("'", TimeKeep.Web.UI.OAuthModule.TokenCache.GetToken(Guid.Parse(HttpContext.Current.Request.Cookies["OAuthIDToken"].Value)).AccessToken, "'") : "null") +
+		",apiVersion:'" + TimeKeep.Web.UI.Configuration.API.ApiVersion + "'" +
                 "};</script>");
             Response.Write("<script type=\"text/javascript\" src=\"main.min.js?v=" + TimeKeep.Web.UI.Configuration.Cache.JSVersion + "\"></script>");
         %>
@@ -65,7 +66,7 @@
                     <tfoot>
                         <tr>
                             <td colspan="4">
-                                Total labor time for this case today is <span id="spanTotalLabor"></span>.
+                                Total labor time for this case today is <span id="spanTotalLabor"></span>. <span id="spanTotalUnloggedLaborText">However, you have not logged <span id="spanTotalUnloggedLabor"></span> yet.</span>
                             </td>
                         </tr>
                         <tr>
@@ -80,7 +81,7 @@
             <br class="break" />
         </section>
         <footer>
-            © 2017 Michael Lopez
+            © <%= DateTime.Now.Year %> Michael Lopez
         </footer>
         <div class="popup" id="popup" style="display:none">
             <div class="wrapper">

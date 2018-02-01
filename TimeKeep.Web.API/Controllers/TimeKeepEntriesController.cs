@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Web.Http;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -11,22 +12,23 @@ using TimeKeep.Web.API.Models;
 namespace TimeKeep.Web.API.Controllers
 {
     [Authorize]
+    [ApiVersion("2017-09-01")]
     [Route("TimeKeepEntries")]
     public class TimeKeepEntriesController : ApiController
     {
-        private static readonly ArgumentNullException userIsNull = new ArgumentNullException("user");
-        private static readonly ArgumentNullException idIsNull = new ArgumentNullException("ID");
-        private static readonly ArgumentNullException rangeIsNull = new ArgumentNullException("range");
-        private static readonly ArgumentNullException CategoryIsNull = new ArgumentNullException("Category");
-        private static readonly ArgumentNullException UserIsNull = new ArgumentNullException("User");
-        private static readonly ArgumentNullException CaseNumberIsNull = new ArgumentNullException("CaseNumber", "CaseNumber cannot be null if the labor is a scorecard labor.");
-        private static readonly ArgumentNullException CaseNumberIsNull2 = new ArgumentNullException("CaseNumber", "The case number cannot be null for this operation.");
-        private static readonly ArgumentException CaseNumberIsNotNull = new ArgumentException("CaseNumber", "CaseNumber cannot be null if the labor is a scorecard labor.");
-        private static readonly ArgumentException MissingOrInvalidRequestBody = new ArgumentException("Request Body", "The request body is missing or invalid.");
-        private static readonly ArgumentException EndDateAtOrBeforeStartDate = new ArgumentException("EndDate", "The EndDate cannot take place at or before the Start Date. You cannot time travel. If you do, please contact support.");
-        private static readonly EntriesNotFoundException noEntries = new EntriesNotFoundException("No time keep entries were found");
-        private static readonly SecurityException userNotAllowed = new SecurityException("Operation not allowed.");
-        private sealed class EntriesNotFoundException : Exception
+        protected static readonly ArgumentNullException userIsNull = new ArgumentNullException("user");
+        protected static readonly ArgumentNullException idIsNull = new ArgumentNullException("ID");
+        protected static readonly ArgumentNullException rangeIsNull = new ArgumentNullException("range");
+        protected static readonly ArgumentNullException CategoryIsNull = new ArgumentNullException("Category");
+        protected static readonly ArgumentNullException UserIsNull = new ArgumentNullException("User");
+        protected static readonly ArgumentNullException CaseNumberIsNull = new ArgumentNullException("CaseNumber", "CaseNumber cannot be null if the labor is a scorecard labor.");
+        protected static readonly ArgumentNullException CaseNumberIsNull2 = new ArgumentNullException("CaseNumber", "The case number cannot be null for this operation.");
+        protected static readonly ArgumentException CaseNumberIsNotNull = new ArgumentException("CaseNumber", "CaseNumber cannot be null if the labor is a scorecard labor.");
+        protected static readonly ArgumentException MissingOrInvalidRequestBody = new ArgumentException("Request Body", "The request body is missing or invalid.");
+        protected static readonly ArgumentException EndDateAtOrBeforeStartDate = new ArgumentException("EndDate", "The EndDate cannot take place at or before the Start Date. You cannot time travel. If you do, please contact support.");
+        protected static readonly EntriesNotFoundException noEntries = new EntriesNotFoundException("No time keep entries were found");
+        protected static readonly SecurityException userNotAllowed = new SecurityException("Operation not allowed.");
+        protected sealed class EntriesNotFoundException : Exception
         {
             public EntriesNotFoundException() : base()
             {
@@ -44,7 +46,7 @@ namespace TimeKeep.Web.API.Controllers
             }
         }
 
-        private bool ValidateUser(IPrincipal principal, string user)
+        protected bool ValidateUser(IPrincipal principal, string user)
         {
             if (principal == null || principal.Identity == null || !principal.Identity.IsAuthenticated)
                 return false;
@@ -53,22 +55,21 @@ namespace TimeKeep.Web.API.Controllers
             return GetPrincipalUser(principal).Equals(user.Replace(" ", string.Empty), StringComparison.InvariantCultureIgnoreCase);
         }
 
-        private bool ValidateUser(IPrincipal principal, TimeKeepEntry entry)
+        protected bool ValidateUser(IPrincipal principal, TimeKeepEntry entry)
         {
             if (entry == null)
                 return false;
             return ValidateUser(principal, entry.User);
         }
 
-        private string GetPrincipalUser(IPrincipal principal)
+        protected string GetPrincipalUser(IPrincipal principal)
         {
             if (principal == null || principal.Identity == null || !principal.Identity.IsAuthenticated)
                 return null;
             return principal.Identity.Name.Replace(" ", string.Empty).ToLowerInvariant();
         }
 
-
-
+        
         /// <summary>
         /// Gets the list of time keep entries for a given user and time range
         /// </summary>
@@ -77,7 +78,7 @@ namespace TimeKeep.Web.API.Controllers
         /// <returns></returns>
         [HttpPost]
         [Route("TimeKeepEntries/User/{user:alpha}")]
-        public HttpResponseMessage GetByUser(string user, [FromBody] DateRange range)
+        public virtual HttpResponseMessage GetByUser(string user, [FromBody] DateRange range)
         {
             try
             {
@@ -103,7 +104,7 @@ namespace TimeKeep.Web.API.Controllers
         /// <returns></returns>
         [HttpPost]
         [Route("TimeKeepEntries/Case/{casenumber}")]
-        public HttpResponseMessage GetByCase(string casenumber, [FromBody] DateRange range)
+        public virtual HttpResponseMessage GetByCase(string casenumber, [FromBody] DateRange range)
         {
             try
             {
@@ -127,7 +128,7 @@ namespace TimeKeep.Web.API.Controllers
         /// <returns></returns>
         [HttpPost]
         [Route("TimeKeepEntries/Case/{casenumber}/Totals")]
-        public HttpResponseMessage GetByCaseTotals(string casenumber, [FromBody] DateRange range)
+        public virtual HttpResponseMessage GetByCaseTotals(string casenumber, [FromBody] DateRange range)
         {
             try
             {
@@ -146,7 +147,7 @@ namespace TimeKeep.Web.API.Controllers
 
         [HttpPut]
         [Route("TimeKeepEntries/Case/{casenumber}/LogAndDetailAll")]
-        public HttpResponseMessage LogAndDetailAllByCase(string casenumber, [FromBody] DateRange range)
+        public virtual HttpResponseMessage LogAndDetailAllByCase(string casenumber, [FromBody] DateRange range)
         {
             try
             {
@@ -171,7 +172,7 @@ namespace TimeKeep.Web.API.Controllers
         /// <returns>A list of totals, including the global totals, totals per scorecard labor and per individual category</returns>
         [HttpPost]
         [Route("TimeKeepEntries/User/{user:alpha}/Totals")]
-        public HttpResponseMessage GetByUserTotals(string user, [FromBody] DateRange range)
+        public virtual HttpResponseMessage GetByUserTotals(string user, [FromBody] DateRange range)
         {
             try
             {
@@ -246,7 +247,7 @@ namespace TimeKeep.Web.API.Controllers
         /// <returns></returns>
         [HttpGet]
         [Route("TimeKeepEntries/{id:guid}")]
-        public HttpResponseMessage Get(Guid id)
+        public virtual HttpResponseMessage Get(Guid id)
         {
             try
             {
@@ -274,7 +275,7 @@ namespace TimeKeep.Web.API.Controllers
         /// If this event took place, the CreatedResult will have a Modified field providing data about the previous entry.
         /// </remarks>
         [HttpPost]
-        public HttpResponseMessage Post([FromBody]TimeKeepEntry value)
+        public virtual HttpResponseMessage Post([FromBody]TimeKeepEntry value)
         {
 
             try
@@ -323,7 +324,7 @@ namespace TimeKeep.Web.API.Controllers
         /// <param name="value">The new valuels</param>
         /// <returns>Updated time keep entry</returns>
         [HttpPut]
-        public HttpResponseMessage Put([FromBody] TimeKeepEntry value)
+        public virtual HttpResponseMessage Put([FromBody] TimeKeepEntry value)
         {
             try
             {
@@ -367,7 +368,7 @@ namespace TimeKeep.Web.API.Controllers
         /// <param name="value">The value to delete. NOTE: It could potentially only have the ID</param>
         /// <returns>The deleted value (just in case :).</returns>
         [HttpDelete]
-        public HttpResponseMessage Delete([FromBody] TimeKeepEntry value)
+        public virtual HttpResponseMessage Delete([FromBody] TimeKeepEntry value)
         {
             try
             {
@@ -398,7 +399,7 @@ namespace TimeKeep.Web.API.Controllers
         /// <returns>Updated time keep entry</returns>
         [HttpPatch]
         [Route("TimeKeepEntries/{id:guid}/Toggle/IsLogged")]
-        public HttpResponseMessage ToggleIsLogged(Guid id)
+        public virtual HttpResponseMessage ToggleIsLogged(Guid id)
         {
             try
             {
@@ -424,7 +425,7 @@ namespace TimeKeep.Web.API.Controllers
         /// <returns>Updated time keep entry</returns>
         [HttpPatch]
         [Route("TimeKeepEntries/{id:guid}/Toggle/IsDetailed")]
-        public HttpResponseMessage ToggleIsDetailed(Guid id)
+        public virtual HttpResponseMessage ToggleIsDetailed(Guid id)
         {
             try
             {

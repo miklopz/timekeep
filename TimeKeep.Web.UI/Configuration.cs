@@ -28,7 +28,14 @@ namespace TimeKeep.Web.UI
             {
                 get
                 {
-                    return ConfigurationManager.AppSettings["API:Endpoint"] ?? "https://localhost:10003";
+                    return ConfigurationManager.AppSettings["API:Endpoint"];
+                }
+            }
+            public static string ApiVersion
+            {
+                get
+                {
+                    return ConfigurationManager.AppSettings["API:ApiVersion"] ?? "2017-09-01";
                 }
             }
         }

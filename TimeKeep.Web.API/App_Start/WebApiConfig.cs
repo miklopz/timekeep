@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Converters;
+﻿using Microsoft.Web.Http.Routing;
+using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,8 +14,8 @@ namespace TimeKeep.Web.API
         {
             EnableCorsAttribute cors = new EnableCorsAttribute("*", "*", "*");
             config.EnableCors(cors);
-
             config.MapHttpAttributeRoutes();
+            config.AddApiVersioning(o => o.ReportApiVersions = true);
 
             IsoDateTimeConverter converter = new IsoDateTimeConverter
             {
@@ -24,10 +25,15 @@ namespace TimeKeep.Web.API
             config.Formatters.JsonFormatter.SerializerSettings.Converters.Add(converter);
 
             config.Routes.MapHttpRoute(
-                name: "DefaultApi",
-                routeTemplate: "api/{controller}/{id}",
-                defaults: new { id = RouteParameter.Optional }
-            );
+                "VersionedQueryString",
+                "{controller}/{id}",
+                defaults: null);
+            
+            config.Routes.MapHttpRoute(
+                "VersionedUrl",
+                "v{apiVersion}/{controller}/{id}",
+                defaults: null,
+                constraints: new { apiVersion = new ApiVersionRouteConstraint() });
         }
     }
 }

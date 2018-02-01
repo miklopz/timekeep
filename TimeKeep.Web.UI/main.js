@@ -37,6 +37,7 @@
 
         __global.prototype = {
             endpoint: initPara.endpoint,
+            apiVersion: initPara.apiVersion,
             user: initPara.user,
             xmlFactories: [
                 function () { return new XMLHttpRequest(); },
@@ -169,7 +170,7 @@
                 }
             },
             getAPIURL: function (relativePath) {
-                return TimeKeep.endpoint + relativePath;
+                return TimeKeep.endpoint + relativePath + "?api-version=" + TimeKeep.apiVersion;
             },
             sendRequest: function (url, method, data, successCallback, errorCallback, block, done) {
                 return TimeKeep.__sendRequest(TimeKeep.getAPIURL(url), method, data, successCallback, errorCallback, true, block, done);
@@ -585,14 +586,21 @@
 
                 document.getElementById('tbodySummary').innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
                 document.getElementById('divCaseSummary').currentCase = caseNumber;
+                var laborText = document.getElementById('spanTotalUnloggedLaborText');
+                var laborSpan = document.getElementById('spanTotalUnloggedLabor');
+                laborText.style.display = 'none';
 
                 TimeKeep.sendRequest('/timekeepentries/case/' + caseNumber + '/totals', 'POST', TimeKeep.getUTCDateRange(),
                     function success(result) {
                         if (!result || !result.data) {
                             return; // TODO; handle
                         }
-                        
-                        document.getElementById('spanTotalLabor').innerHTML = result.data;
+
+                        document.getElementById('spanTotalLabor').innerHTML = result.data.TotalLabor;
+                        if (result.data.TotalUnloggedLabor !== '00:00:00') {
+                            laborText.style.display = '';
+                            laborSpan.innerHTML = result.data.TotalUnloggedLabor;
+                        }
                         document.getElementById('divCaseSummary').style.display = '';
 
                         TimeKeep.sendRequest('/timekeepentries/case/' + caseNumber, 'POST', TimeKeep.getUTCDateRange(),
