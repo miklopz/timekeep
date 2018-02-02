@@ -38,14 +38,13 @@
                         <th>Case Number</th>
                         <th>Labor</th>
                         <th>Logged?</th>
-                        <th>Detailed?</th>
                         <th></th>
                     </tr>
                 </thead>
                 <tbody id="tbEntries"></tbody>
                 <tfoot>
                     <tr>
-                        <td id="tdtotals" colspan="8"></td>
+                        <td id="tdtotals" colspan="7"></td>
                     </tr>
                 </tfoot>
             </table>
@@ -66,12 +65,12 @@
                     <tfoot>
                         <tr>
                             <td colspan="4">
-                                Total labor time for this case today is <span id="spanTotalLabor"></span>. <span id="spanTotalUnloggedLaborText">However, you have not logged <span id="spanTotalUnloggedLabor"></span> yet.</span>
+                                Total labor time for this case today is <span id="spanTotalLabor"></span>. <span id="spanTotalUnloggedLaborText"><br />However, you have not logged <span id="spanTotalUnloggedLabor"></span> yet.</span>
                             </td>
                         </tr>
                         <tr>
                             <td colspan="4">
-                                <button id="btnLogAndDetailAll" onclick="TimeKeep.btnLogAndDetailAllClick();">Log and detail all entries</button>
+                                <button id="btnLogAndDetailAll" onclick="TimeKeep.btnLogAndDetailAllClick();">Log all entries</button>
                                 <button id="btnCloseSummary" onclick="TimeKeep.btnCloseSummaryClick();">Close</button>
                             </td>
                         </tr>

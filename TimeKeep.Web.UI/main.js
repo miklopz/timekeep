@@ -55,13 +55,7 @@
             broadcastID: null,
             accessToken: initPara.accessToken,
             refreshToken: null,
-            __sendRequest: function (url, method, data, successCallback, errorCallback, auth, block, done) {
-                if (block) {
-                    if (TimeKeep.ajaxLock) {
-                        return;
-                    }
-                }
-                TimeKeep.ajaxLock = true;
+            __sendRequest: function (url, method, data, successCallback, errorCallback, auth, done) {
                 var ajax = TimeKeep.getAjax();
                 if (!ajax) return;
                 ajax.open(method, url, successCallback !== null);
@@ -75,10 +69,6 @@
                 ajax.dCallback = done;
                 ajax.onreadystatechange = function () {
                     if (this.readyState !== 4) return;
-                    TimeKeep.ajaxLock = false;
-                    if (this.dCallback) {
-                        this.dCallback();
-                    }
                     if (this.status > 399 && this.eCallback) {
                         var data = null;
                         try {
@@ -107,6 +97,9 @@
                             data: data2,
                             status: this.status
                         });
+                    }
+                    if (this.dCallback) {
+                        this.dCallback();
                     }
                 };
                 ajax.send(data ? JSON.stringify(data) : '');
@@ -149,7 +142,8 @@
 
                 replace();
             },
-            ajaxLock: false,
+            remoteLock: 0,
+            localLock: 0,
             getUTCDateRange: function () {
                 var dt = new Date();
                 var dateStart = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), 0, 0, 0, 0);
@@ -172,11 +166,11 @@
             getAPIURL: function (relativePath) {
                 return TimeKeep.endpoint + relativePath + "?api-version=" + TimeKeep.apiVersion;
             },
-            sendRequest: function (url, method, data, successCallback, errorCallback, block, done) {
-                return TimeKeep.__sendRequest(TimeKeep.getAPIURL(url), method, data, successCallback, errorCallback, true, block, done);
+            sendRequest: function (url, method, data, successCallback, errorCallback, done) {
+                return TimeKeep.__sendRequest(TimeKeep.getAPIURL(url), method, data, successCallback, errorCallback, true, done);
             },
-            sendLocalRequest: function (url, method, data, successCallback, errorCallback, block, done) {
-                return TimeKeep.__sendRequest(url, method, data, successCallback, errorCallback, false, block, done);
+            sendLocalRequest: function (url, method, data, successCallback, errorCallback, done) {
+                return TimeKeep.__sendRequest(url, method, data, successCallback, errorCallback, false, done);
             },
             btnStartYourDate: function () {
                 var data = {
@@ -202,8 +196,7 @@
                     },
                     function error(result) {
                         // TODO: Handle
-                    },
-                    true
+                    }
                 );
             },
             init: function () {
@@ -309,17 +302,35 @@
                 );
             },
             broadcastChange: function (change) {
-
+                if (TimeKeep.localLock === 0) {
+                    if (++TimeKeep.localLock >= 2) {
+                        --TimeKeep.localLock;
+                        return;
+                    }
+                }
+                else
+                    return;
                 TimeKeep.sendLocalRequest('/broadcast/broadcast', 'POST', { ID: TimeKeep.broadcastID, Change: change },
                     function sCallback(result) {
                     },
                     function eCallback(result) {
                         // TODO: Handle
+                    },
+                    function dCallback() {
+                        TimeKeep.localLock = 0;
                     }
                 );
             },
             startBroadcastListener: function () {
                 var task = function __() {
+
+                    if (TimeKeep.localLock === 0) {
+                        if (++TimeKeep.localLock >= 2) {
+                            --TimeKeep.localLock;
+                            return;
+                        }
+                    }
+
                     TimeKeep.sendLocalRequest('/broadcast/changes', 'POST', { ID: TimeKeep.broadcastID },
                         function sCallback(result) {
                             if (result) {
@@ -341,17 +352,33 @@
                             // TODO: Handle
 
                             setTimeout(task, 5000);
+                        },
+                        function dCallback() {
+                            TimeKeep.localLock = 0;
                         }
                     );
                 };
 
                 var dereg = function (e) {
+
+                    if (TimeKeep.localLock === 0) {
+                        if (++TimeKeep.localLock >= 2) {
+                            --TimeKeep.localLock;
+                            return;
+                        }
+                    }
+
+
+
                     TimeKeep.sendLocalRequest('/broadcast/deregister', 'POST', { ID: TimeKeep.broadcastID },
                         function sCallback(result) {
                             // Nothing really, we just want it async
                         },
                         function eCallback(result) {
                             // TODO: Handle
+                        },
+                        function dCallback() {
+                            TimeKeep.localLock = 0;
                         }
                     );
                 };
@@ -375,6 +402,17 @@
                 TimeKeep.megaUpdate();
             },
             btnSaveClick: function () {
+
+                // Fix: This operation apparently has "concurrency" issues, so decided to change up the locking mechanism
+                if (TimeKeep.remoteLock === 0) {
+                    if (++TimeKeep.remoteLock >= 2) {
+                        --TimeKeep.remoteLock;
+                        return;
+                    }
+                }
+                else
+                    return;
+
                 document.getElementById('btnSave').innerHTML = 'Saving...';
                 document.getElementById('btnSave').disabled = true;
                 document.getElementById('btnCancel').disabled = true;
@@ -424,6 +462,7 @@
 
                 if (errors.length) {
                     TimeKeep.errors = errors;
+                    TimeKeep.remoteLock = 0;
                     TimeKeep.megaUpdate();
                 }
                 else {
@@ -449,6 +488,7 @@
                             document.getElementById('btnSave').disabled = false;
                             document.getElementById('btnCancel').disabled = false;
                             document.getElementById('btnSave').innerHTML = 'Save';
+                            TimeKeep.remoteLock = 0;
                         }, 500);
                     };
 
@@ -473,7 +513,6 @@
                             function error(result) {
                                 // TODO: Handle
                             },
-                            true,
                             done
                         );
                     } else if (TimeKeep.editMode === 'E') {
@@ -492,7 +531,6 @@
                             function error(result) {
                                 // TODO: Handle
                             },
-                            true,
                             done
                         );
 
@@ -512,13 +550,24 @@
                             function error(result) {
                                 // TODO: Handle
                             },
-                            true,
                             done
                         );
                     }
                 }
             },
             btnLogClick: function (sender) {
+
+                // Fix: This operation apparently has "concurrency" issues, so decided to change up the locking mechanism
+                if (TimeKeep.remoteLock === 0) {
+                    if (++TimeKeep.remoteLock >= 2) {
+                        --TimeKeep.remoteLock;
+                        return;
+                    }
+                }
+                else
+                    return;
+
+
                 this.btnCloseSummaryClick();
                 var id = sender.parentElement.parentElement.id;
                 var url = ['/timekeepentries/', id, '/toggle/islogged'].join('');
@@ -536,27 +585,9 @@
                     },
                     function error(result) {
                         // TODO: Handle
-                    }
-                );
-            },
-            btnDetailClick: function (sender) {
-                this.btnCloseSummaryClick();
-                var id = sender.parentElement.parentElement.id;
-                var url = ['/timekeepentries/', id, '/toggle/isdetailed'].join('');
-                TimeKeep.sendRequest(url, 'PATCH', null,
-                    function success(result) {
-                        if (result && result.data) {
-                            var change = { changeType: 'Modified', data: result.data };
-                            TimeKeep.changes.push(change);
-                            TimeKeep.broadcastChange(change);
-                            TimeKeep.processChanges();
-                        }
-                        else {
-                            // TODO: Handle
-                        }
                     },
-                    function error(result) {
-                        // TODO: Handle
+                    function done() {
+                        TimeKeep.remoteLock = 0;
                     }
                 );
             },
@@ -636,14 +667,12 @@
                             },
                             function error(result) {
                                 // TODO: Handle
-                            },
-                            true
+                            }
                         );
                     },
                     function error(result) {
                         // TODO: Handle
-                    },
-                    true
+                    }
                 );
             },
             btnLogAndDetailAllClick: function (sender) {
@@ -653,7 +682,7 @@
                 var done = function () {
                     setTimeout(function () {
                         document.getElementById('btnLogAndDetailAll').disabled = false;
-                        document.getElementById('btnLogAndDetailAll').innerHTML = 'Log and detail all entries';
+                        document.getElementById('btnLogAndDetailAll').innerHTML = 'Log all entries';
                     }, 599);
                 };
                 if (caseNum && caseNum.length) {
@@ -675,7 +704,6 @@
                         function error(result) {
                             // TODO: Handle
                         },
-                        true,
                         done
                     );
                 }
@@ -687,10 +715,8 @@
                 var row = document.createElement('tr');
                 row.id = entry.ID;
                 if (entry.Category && entry.Category.IsScorecard) {
-                    if (!entry.IsLogged && !entry.IsDetailed)
+                    if (!entry.IsLogged)
                         row.className = 'entry_red';
-                    else if (entry.IsLogged !== entry.IsDetailed)
-                        row.className = 'entry_yellow';
                     else
                         row.className = 'entry_green';
                 }
@@ -733,18 +759,12 @@
                 sb.push(entry.IsLogged ? 'Yes' : 'No');
                 sb.push('</td>');
                 sb.push('<td>');
-                sb.push(entry.IsDetailed ? 'Yes' : 'No');
-                sb.push('</td>');
-                sb.push('<td>');
                 if (!entry.EndTime) {
                     sb.push(' <button onclick="TimeKeep.btnNewClick(this);" class="stopnlog">Stop and Log</button>');
                 }
                 else {
                     sb.push('<button onclick="TimeKeep.btnLogClick(this);">');
                     sb.push(entry.IsLogged ? 'Unlog' : 'Log');
-                    sb.push('</button>');
-                    sb.push(' <button onclick="TimeKeep.btnDetailClick(this);">');
-                    sb.push(entry.IsDetailed ? 'Undetail' : 'Detail');
                     sb.push('</button>');
                     sb.push(' <button onclick="TimeKeep.btnEditClick(this);">Edit</button>');
                     sb.push(' <button onclick="TimeKeep.btnDeleteClick(this);">Delete</button>');

@@ -115,7 +115,7 @@ table tbody tr > td + td + td + td + td + td {
     text-align: center;
 }
 
-table tbody tr > td + td + td + td + td + td + td + td {
+table tbody tr > td + td + td + td + td + td + td {
     text-align: left;
 }
 
