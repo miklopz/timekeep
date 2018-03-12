@@ -744,7 +744,8 @@
                     sb.push('<td>');
                 }
                 sb.push('</td>');
-                if (entry.CaseNumber && entry.CaseNumber) {
+                isScorecard = entry.CaseNumber && entry.CaseNumber.length;
+                if (isScorecard) {
                     sb.push('<td>');
                     sb.push(entry.CaseNumber);
                     sb.push('</td>');
@@ -768,7 +769,8 @@
                     sb.push('</button>');
                     sb.push(' <button onclick="TimeKeep.btnEditClick(this);">Edit</button>');
                     sb.push(' <button onclick="TimeKeep.btnDeleteClick(this);">Delete</button>');
-                    sb.push(' <button onclick="TimeKeep.btnSummaryClick(this);">Summary</button>');
+                    if(isScorecard)
+                        sb.push(' <button onclick="TimeKeep.btnSummaryClick(this);">Summary</button>'); 
                 }
                 sb.push('</td>');
                 return sb.join('');
@@ -949,6 +951,7 @@
                 var change = { data: null, changeType: "EndOfDay" };
                 TimeKeep.broadcastChange(change);
                 TimeKeep.changes.push(change);
+                processChanges();
             }
         };
 
