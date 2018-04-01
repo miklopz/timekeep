@@ -1,18 +1,27 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" %>
-
-<!DOCTYPE html>
+﻿<%@ Page Language="C#" AutoEventWireup="true" %><!DOCTYPE html>
 
 <html>
     <head runat="server">
         <title>Time Keep Application</title>
         <%
-            Response.Write("<link type=\"text/css\" href=\"main.min.css?v=" + TimeKeep.Web.UI.Configuration.Cache.CSSVersion + "\" rel=\"stylesheet\" />");
-            Response.Write("<script type=\"text/javascript\">var initPara = {endpoint:'" + TimeKeep.Web.UI.Configuration.API.Endpoint + "'," +
-                "user:'" + (HttpContext.Current.User == null || HttpContext.Current.User.Identity == null || !HttpContext.Current.User.Identity.IsAuthenticated ? "anonymous" : HttpContext.Current.User.Identity.Name.ToLowerInvariant().Replace(" ", "")) +
-                "',accessToken:" + (HttpContext.Current.Request.Cookies["OAuthIDToken"] != null ? string.Concat("'", TimeKeep.Web.UI.OAuthModule.TokenCache.GetToken(Guid.Parse(HttpContext.Current.Request.Cookies["OAuthIDToken"].Value)).AccessToken, "'") : "null") +
-		",apiVersion:'" + TimeKeep.Web.UI.Configuration.API.ApiVersion + "'" +
-                "};</script>");
-            Response.Write("<script type=\"text/javascript\" src=\"main.min.js?v=" + TimeKeep.Web.UI.Configuration.Cache.JSVersion + "\"></script>");
+            if(string.IsNullOrEmpty(Request.QueryString["debugjs"])) {
+                Response.Write("<link type=\"text/css\" href=\"main.min.css?v=" + TimeKeep.Web.UI.Configuration.Cache.CSSVersion + "\" rel=\"stylesheet\" />");
+                Response.Write("<script type=\"text/javascript\">var initPara = {endpoint:'" + TimeKeep.Web.UI.Configuration.API.Endpoint + "'," +
+                    "user:'" + (HttpContext.Current.User == null || HttpContext.Current.User.Identity == null || !HttpContext.Current.User.Identity.IsAuthenticated ? "anonymous" : HttpContext.Current.User.Identity.Name.ToLowerInvariant().Replace(" ", "")) +
+                    "',accessToken:" + (HttpContext.Current.Request.Cookies["OAuthIDToken"] != null ? string.Concat("'", TimeKeep.Web.UI.OAuthModule.TokenCache.GetToken(Guid.Parse(HttpContext.Current.Request.Cookies["OAuthIDToken"].Value)).AccessToken, "'") : "null") +
+		    ",apiVersion:'" + TimeKeep.Web.UI.Configuration.API.ApiVersion + "'" +
+                    "};</script>");
+                Response.Write("<script type=\"text/javascript\" src=\"main.min.js?v=" + TimeKeep.Web.UI.Configuration.Cache.JSVersion + "\"></script>");
+            }
+            else if(Request.QueryString["debugjs"].Equals("true")) {
+                Response.Write("<link type=\"text/css\" href=\"main.css?v=" + TimeKeep.Web.UI.Configuration.Cache.CSSVersion + "\" rel=\"stylesheet\" />");
+                Response.Write("<script type=\"text/javascript\">var initPara = {endpoint:'" + TimeKeep.Web.UI.Configuration.API.Endpoint + "'," +
+                    "user:'" + (HttpContext.Current.User == null || HttpContext.Current.User.Identity == null || !HttpContext.Current.User.Identity.IsAuthenticated ? "anonymous" : HttpContext.Current.User.Identity.Name.ToLowerInvariant().Replace(" ", "")) +
+                    "',accessToken:" + (HttpContext.Current.Request.Cookies["OAuthIDToken"] != null ? string.Concat("'", TimeKeep.Web.UI.OAuthModule.TokenCache.GetToken(Guid.Parse(HttpContext.Current.Request.Cookies["OAuthIDToken"].Value)).AccessToken, "'") : "null") +
+		    ",apiVersion:'" + TimeKeep.Web.UI.Configuration.API.ApiVersion + "'" +
+                    "};</script>");
+                Response.Write("<script type=\"text/javascript\" src=\"main.js?v=" + TimeKeep.Web.UI.Configuration.Cache.JSVersion + "\"></script>");
+            }
         %>
     </head>
     <body>
@@ -29,6 +38,9 @@
             <button id="btnSYD" onclick="TimeKeep.btnStartYourDate();">Start your day</button>
         </section>
         <section id="entries" style="display:none">
+            <% if(!string.IsNullOrEmpty(Request.QueryString["debugjs"]) && Request.QueryString["debugjs"].Equals("true")) { %>
+            <button onclick="setTimeout(function(){TimeKeep.lastDay = 999;},5000);">Test EOD</button>
+            <% } %>
             <table id="tblEntries">
                 <thead>
                     <tr>
